@@ -1,46 +1,720 @@
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>poke-api</title>
-    <link href="/src/style.css" rel="stylesheet" />
+    <title>Pokedex - Pokémon</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      rel="icon"
+      href="https://img.icons8.com/color/96/000000/pokeball.png"
+      type="image/x-icon"
+    />
   </head>
-  <body>
-    <header class="bg-black p-5 text-white font-bold text-lg">
-      <h1>Pokemón API</h1>
-    </header>
-    <section class="p-8 flex flex-col gap-4">
-      <div class="flex flex-row items-center gap-4">
-        <h2 class="text-xl font-bold">Busca un Pokemón</h2>
-        <input
-          class="rounded-md p-2 border-2 border-gray-400"
-          placeholder="Pikachu..."
-          type="text"
-        />
-      </div>
-      <!-- Pokémon Display Area -->
-      <div
-        class="p-4 rounded-xl border-2 w-full max-w-[700px] mx-auto border-gray-400 mt-4"
-      >
-        <!-- Default State -->
-        <div class="flex flex-col items-center justify-center py-16">
-          <div
-            class="w-32 h-32 mb-6 rounded-full flex items-center justify-center border-4 border-gray-600"
-          >
-            <i class="fas fa-dragon text-6xl text-gray-500"></i>
+  <body
+    class="bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 min-h-screen text-gray-100 p-4 md:p-6"
+  >
+    <!-- Contenedor principal -->
+    <div class="container mx-auto max-w-7xl">
+      <!-- Header -->
+      <header class="text-center mb-10">
+        <div
+          class="flex flex-col md:flex-row items-center justify-between mb-8"
+        >
+          <div class="flex items-center space-x-4 mb-6 md:mb-0">
+            <div
+              class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center border-4 border-white"
+            >
+              <div class="w-8 h-8 bg-white rounded-full"></div>
+            </div>
+            <h1
+              class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-red-500 via-yellow-400 to-blue-500 bg-clip-text text-transparent"
+            >
+              Pokédex
+            </h1>
           </div>
-          <h3 class="text-2xl font-bold text-gray-400 mb-2">Pokémon Display</h3>
+
+          <div
+            class="flex flex-col space-y-4 md:space-y-0 md:flex-row md:space-x-4"
+          >
+            <div class="relative">
+              <input
+                type="text"
+                id="search-input"
+                placeholder="Buscar Pokémon por nombre o ID..."
+                class="w-full md:w-80 p-3 pl-12 bg-gray-800 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-300"
+              />
+              <i
+                class="fas fa-search absolute left-4 top-3.5 text-gray-400"
+              ></i>
+            </div>
+
+            <div class="flex space-x-2">
+              <button
+                id="prev-btn"
+                class="px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <i class="fas fa-chevron-left"></i>
+              </button>
+              <button
+                id="next-btn"
+                class="px-4 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <i class="fas fa-chevron-right"></i>
+              </button>
+            </div>
+          </div>
         </div>
 
-        <!-- Pokémon Card (se mostrará dinámicamente) -->
-        <div id="pokemon-card" class="hidden">
-          <!-- Esta tarjeta se llenará con JavaScript -->
+        <p class="text-gray-300 text-lg mb-2">
+          Explora el mundo Pokémon. Haz clic en cualquier tarjeta para ver más
+          detalles.
+        </p>
+        <div class="flex flex-wrap justify-center gap-2 mt-4">
+          <span class="px-3 py-1 bg-red-600 rounded-full text-sm"
+            >Total: 1302 Pokémon</span
+          >
+          <span class="px-3 py-1 bg-blue-600 rounded-full text-sm"
+            >Generación I-VIII</span
+          >
+          <span class="px-3 py-1 bg-green-600 rounded-full text-sm"
+            >API: PokeAPI.co</span
+          >
+        </div>
+      </header>
+
+      <!-- Estado de carga y errores -->
+      <div id="loading" class="flex flex-col items-center justify-center py-20">
+        <div
+          class="w-24 h-24 border-8 border-gray-300 border-t-blue-500 rounded-full animate-spin mb-6"
+        ></div>
+        <p class="text-2xl font-medium text-gray-300">Cargando Pokédex...</p>
+        <p class="text-gray-400 mt-2">Esperando respuesta de la API</p>
+      </div>
+
+      <div
+        id="error-message"
+        class="hidden bg-red-900/50 border border-red-700 rounded-xl p-6 mb-8 text-center"
+      >
+        <i class="fas fa-exclamation-triangle text-4xl text-red-400 mb-4"></i>
+        <h3 class="text-2xl font-bold text-red-300 mb-2">Error de Conexión</h3>
+        <p class="text-gray-300 mb-4">
+          No se pudo conectar con la PokéAPI. Verifica tu conexión a internet.
+        </p>
+        <button
+          id="retry-btn"
+          class="px-6 py-3 bg-red-600 hover:bg-red-700 rounded-lg font-medium transition-colors duration-300"
+        >
+          <i class="fas fa-redo mr-2"></i> Reintentar Conexión
+        </button>
+      </div>
+
+      <!-- Contenedor de Pokémon -->
+      <div
+        id="pokedex-container"
+        class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12"
+      >
+        <!-- Las tarjetas de Pokémon se insertarán aquí dinámicamente -->
+      </div>
+
+      <!-- Modal de detalles del Pokémon -->
+      <div
+        id="pokemon-modal"
+        class="hidden fixed inset-0 bg-black/70 flex items-center justify-center p-4 z-50"
+      >
+        <div
+          class="bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden border border-gray-700"
+        >
+          <!-- Header del modal -->
+          <div
+            class="flex justify-between items-center p-6 border-b border-gray-700"
+          >
+            <h2 id="modal-title" class="text-2xl font-bold">
+              Detalles del Pokémon
+            </h2>
+            <button
+              id="close-modal"
+              class="text-gray-400 hover:text-white text-2xl"
+            >
+              <i class="fas fa-times"></i>
+            </button>
+          </div>
+
+          <!-- Contenido del modal -->
+          <div class="p-6 overflow-y-auto max-h-[70vh]">
+            <div class="flex flex-col md:flex-row gap-8">
+              <!-- Imagen y tipos -->
+              <div class="flex-1">
+                <div
+                  id="modal-image"
+                  class="bg-gray-800 rounded-xl p-6 flex items-center justify-center mb-6"
+                >
+                  <img
+                    id="modal-pokemon-img"
+                    class="w-64 h-64"
+                    src=""
+                    alt="Pokemon"
+                  />
+                </div>
+                <div class="flex flex-wrap gap-2 mb-6">
+                  <!-- Los tipos se insertarán aquí -->
+                </div>
+                <div class="bg-gray-800/50 rounded-xl p-4">
+                  <h3 class="text-lg font-bold mb-2 text-blue-300">
+                    Información Básica
+                  </h3>
+                  <div class="grid grid-cols-2 gap-4">
+                    <div>
+                      <p class="text-gray-400">Altura</p>
+                      <p id="modal-height" class="font-bold">0 m</p>
+                    </div>
+                    <div>
+                      <p class="text-gray-400">Peso</p>
+                      <p id="modal-weight" class="font-bold">0 kg</p>
+                    </div>
+                    <div>
+                      <p class="text-gray-400">Experiencia Base</p>
+                      <p id="modal-exp" class="font-bold">0</p>
+                    </div>
+                    <div>
+                      <p class="text-gray-400">ID</p>
+                      <p id="modal-id" class="font-bold">#000</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Estadísticas y habilidades -->
+              <div class="flex-1">
+                <div class="mb-8">
+                  <h3 class="text-lg font-bold mb-3 text-blue-300">
+                    Estadísticas
+                  </h3>
+                  <div id="modal-stats" class="space-y-3">
+                    <!-- Las estadísticas se insertarán aquí -->
+                  </div>
+                </div>
+
+                <div>
+                  <h3 class="text-lg font-bold mb-3 text-blue-300">
+                    Habilidades
+                  </h3>
+                  <div id="modal-abilities" class="flex flex-wrap gap-2">
+                    <!-- Las habilidades se insertarán aquí -->
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Footer del modal -->
+          <div class="p-6 border-t border-gray-700 bg-gray-900/50">
+            <div class="flex justify-between">
+              <button
+                id="modal-prev"
+                class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-300 flex items-center"
+              >
+                <i class="fas fa-chevron-left mr-2"></i> Anterior
+              </button>
+              <button
+                id="modal-next"
+                class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-300 flex items-center"
+              >
+                Siguiente <i class="fas fa-chevron-right ml-2"></i>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
-    </section>
-    <footer></footer>
-    <script type="module" src="/src/main.js"></script>
+
+      <!-- Footer -->
+      <footer
+        class="mt-12 pt-8 border-t border-gray-800 text-center text-gray-400"
+      >
+        <p class="mb-4">
+          <i class="fas fa-code text-blue-400 mr-2"></i>
+          Desarrollado con Tailwind CSS y PokéAPI
+        </p>
+        <p class="text-sm">
+          Este proyecto consume datos de
+          <a
+            href="https://pokeapi.co"
+            class="text-blue-400 hover:text-blue-300 underline"
+            target="_blank"
+            >PokeAPI.co</a
+          >
+          y está diseñado para mostrar habilidades de desarrollo web.
+        </p>
+        <div class="mt-4 flex justify-center space-x-6">
+          <div class="flex items-center">
+            <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+            <span class="text-sm">Online</span>
+          </div>
+          <div class="flex items-center">
+            <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+            <span class="text-sm"
+              >Pokémon: <span id="count-loaded">0</span> cargados</span
+            >
+          </div>
+        </div>
+      </footer>
+    </div>
+
+    <script>
+      // Variables globales
+      let currentPage = 1;
+      const itemsPerPage = 20;
+      let totalPokemon = 1302;
+      let allPokemon = [];
+      let currentPokemonId = null;
+
+      // Elementos del DOM
+      const pokedexContainer = document.getElementById("pokedex-container");
+      const loadingElement = document.getElementById("loading");
+      const errorElement = document.getElementById("error-message");
+      const searchInput = document.getElementById("search-input");
+      const prevBtn = document.getElementById("prev-btn");
+      const nextBtn = document.getElementById("next-btn");
+      const retryBtn = document.getElementById("retry-btn");
+      const countLoaded = document.getElementById("count-loaded");
+
+      // Elementos del modal
+      const pokemonModal = document.getElementById("pokemon-modal");
+      const closeModalBtn = document.getElementById("close-modal");
+      const modalPrevBtn = document.getElementById("modal-prev");
+      const modalNextBtn = document.getElementById("modal-next");
+
+      // Clase para manejar la Pokedex
+      class Pokedex {
+        constructor() {
+          this.baseURL = "https://pokeapi.co/api/v2";
+          this.cache = new Map();
+        }
+
+        // Método para hacer peticiones a la API con manejo de errores
+        async fetchData(url) {
+          try {
+            // Verificar caché primero
+            if (this.cache.has(url)) {
+              return this.cache.get(url);
+            }
+
+            const response = await fetch(url);
+
+            if (!response.ok) {
+              throw new Error(`Error HTTP: ${response.status}`);
+            }
+
+            const data = await response.json();
+
+            // Guardar en caché
+            this.cache.set(url, data);
+
+            return data;
+          } catch (error) {
+            console.error("Error en fetchData:", error);
+            this.showError();
+            throw error;
+          }
+        }
+
+        // Obtener lista de Pokémon paginada
+        async getPokemonList(offset = 0, limit = itemsPerPage) {
+          const url = `${this.baseURL}/pokemon?offset=${offset}&limit=${limit}`;
+          return await this.fetchData(url);
+        }
+
+        // Obtener datos de un Pokémon específico
+        async getPokemonData(idOrName) {
+          const url = `${this.baseURL}/pokemon/${idOrName}`;
+          return await this.fetchData(url);
+        }
+
+        // Obtener datos de especie (para información adicional)
+        async getPokemonSpecies(id) {
+          const url = `${this.baseURL}/pokemon-species/${id}`;
+          return await this.fetchData(url);
+        }
+
+        // Mostrar error en la interfaz
+        showError() {
+          loadingElement.classList.add("hidden");
+          pokedexContainer.classList.add("hidden");
+          errorElement.classList.remove("hidden");
+        }
+
+        // Ocultar error
+        hideError() {
+          errorElement.classList.add("hidden");
+        }
+      }
+
+      // Crear instancia de Pokedex
+      const pokedex = new Pokedex();
+
+      // Función para formatear el ID del Pokémon
+      function formatPokemonId(id) {
+        return `#${id.toString().padStart(3, "0")}`;
+      }
+
+      // Función para capitalizar la primera letra
+      function capitalize(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+      }
+
+      // Función para obtener el color según el tipo
+      function getTypeColor(type) {
+        const typeColors = {
+          normal: "bg-gray-500",
+          fire: "bg-red-500",
+          water: "bg-blue-500",
+          grass: "bg-green-500",
+          electric: "bg-yellow-500",
+          ice: "bg-blue-300",
+          fighting: "bg-red-700",
+          poison: "bg-purple-500",
+          ground: "bg-yellow-700",
+          flying: "bg-indigo-400",
+          psychic: "bg-pink-500",
+          bug: "bg-lime-500",
+          rock: "bg-yellow-800",
+          ghost: "bg-purple-700",
+          dark: "bg-gray-800",
+          dragon: "bg-indigo-700",
+          steel: "bg-gray-400",
+          fairy: "bg-pink-300",
+        };
+        return typeColors[type] || "bg-gray-600";
+      }
+
+      // Crear tarjeta de Pokémon
+      function createPokemonCard(pokemon) {
+        const card = document.createElement("div");
+        card.className =
+          "pokemon-card bg-gradient-to-br from-gray-800 to-gray-900 rounded-2xl overflow-hidden border border-gray-700 hover:border-blue-500 transition-all duration-300 cursor-pointer transform hover:-translate-y-2 shadow-xl";
+        card.dataset.id = pokemon.id;
+
+        // Determinar color de fondo basado en el tipo principal
+        const mainType = pokemon.types[0].type.name;
+        const typeColorClass = getTypeColor(mainType);
+
+        card.innerHTML = `
+                <div class="p-5">
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <h3 class="text-xl font-bold">${capitalize(pokemon.name)}</h3>
+                            <p class="text-gray-400">${formatPokemonId(pokemon.id)}</p>
+                        </div>
+                        <div class="w-16 h-16 ${typeColorClass} rounded-full flex items-center justify-center p-2">
+                            <img src="${pokemon.sprites.other["official-artwork"].front_default || pokemon.sprites.front_default}" 
+                                 alt="${pokemon.name}" 
+                                 class="w-full h-full object-contain">
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-wrap gap-2 mb-4">
+                        ${pokemon.types
+                          .map(
+                            (type) => `
+                            <span class="px-3 py-1 ${getTypeColor(type.type.name)} rounded-full text-sm font-medium">
+                                ${capitalize(type.type.name)}
+                            </span>
+                        `,
+                          )
+                          .join("")}
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mt-6">
+                        <div class="bg-gray-800/50 rounded-lg p-3">
+                            <p class="text-gray-400 text-sm">Altura</p>
+                            <p class="font-bold">${(pokemon.height / 10).toFixed(1)} m</p>
+                        </div>
+                        <div class="bg-gray-800/50 rounded-lg p-3">
+                            <p class="text-gray-400 text-sm">Peso</p>
+                            <p class="font-bold">${(pokemon.weight / 10).toFixed(1)} kg</p>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-700">
+                        <div class="flex justify-between">
+                            <span class="text-gray-400">HP</span>
+                            <span class="font-bold">${pokemon.stats[0].base_stat}</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2 mt-1">
+                            <div class="bg-green-500 h-2 rounded-full" style="width: ${Math.min(pokemon.stats[0].base_stat, 100)}%"></div>
+                        </div>
+                    </div>
+                </div>
+            `;
+
+        // Agregar evento de clic para abrir el modal
+        card.addEventListener("click", () => openPokemonModal(pokemon.id));
+
+        return card;
+      }
+
+      // Cargar Pokémon de la página actual
+      async function loadPokemonPage(page) {
+        try {
+          // Mostrar loading
+          loadingElement.classList.remove("hidden");
+          pokedexContainer.classList.add("hidden");
+          pokedex.hideError();
+
+          const offset = (page - 1) * itemsPerPage;
+
+          // Obtener lista de Pokémon
+          const listData = await pokedex.getPokemonList(offset, itemsPerPage);
+
+          // Limpiar contenedor
+          pokedexContainer.innerHTML = "";
+
+          // Obtener datos detallados de cada Pokémon
+          const pokemonPromises = listData.results.map((pokemon) =>
+            pokedex.getPokemonData(pokemon.name),
+          );
+
+          const pokemonDataArray = await Promise.all(pokemonPromises);
+
+          // Crear tarjetas para cada Pokémon
+          pokemonDataArray.forEach((pokemon) => {
+            const card = createPokemonCard(pokemon);
+            pokedexContainer.appendChild(card);
+          });
+
+          // Actualizar contador
+          countLoaded.textContent = offset + pokemonDataArray.length;
+
+          // Actualizar estado de los botones de navegación
+          prevBtn.disabled = page === 1;
+          nextBtn.disabled = offset + itemsPerPage >= totalPokemon;
+
+          // Ocultar loading y mostrar Pokémon
+          loadingElement.classList.add("hidden");
+          pokedexContainer.classList.remove("hidden");
+        } catch (error) {
+          console.error("Error al cargar Pokémon:", error);
+          pokedex.showError();
+        }
+      }
+
+      // Buscar Pokémon
+      async function searchPokemon(query) {
+        if (!query.trim()) {
+          // Si la búsqueda está vacía, volver a la página actual
+          loadPokemonPage(currentPage);
+          return;
+        }
+
+        try {
+          loadingElement.classList.remove("hidden");
+          pokedexContainer.classList.add("hidden");
+
+          // Intentar buscar por ID o nombre
+          const pokemonData = await pokedex.getPokemonData(query.toLowerCase());
+
+          // Limpiar contenedor
+          pokedexContainer.innerHTML = "";
+
+          // Mostrar solo el Pokémon encontrado
+          const card = createPokemonCard(pokemonData);
+          pokedexContainer.appendChild(card);
+
+          loadingElement.classList.add("hidden");
+          pokedexContainer.classList.remove("hidden");
+
+          // Deshabilitar botones de navegación durante la búsqueda
+          prevBtn.disabled = true;
+          nextBtn.disabled = true;
+        } catch (error) {
+          console.error("Error en búsqueda:", error);
+
+          // Mostrar mensaje de no encontrado
+          pokedexContainer.innerHTML = `
+                    <div class="col-span-full text-center py-12">
+                        <i class="fas fa-question-circle text-6xl text-gray-500 mb-4"></i>
+                        <h3 class="text-2xl font-bold text-gray-300 mb-2">Pokémon no encontrado</h3>
+                        <p class="text-gray-400">No se encontró ningún Pokémon con: "${query}"</p>
+                        <button id="clear-search" class="mt-6 px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-300">
+                            Mostrar todos los Pokémon
+                        </button>
+                    </div>
+                `;
+
+          // Agregar evento al botón de limpiar búsqueda
+          document
+            .getElementById("clear-search")
+            .addEventListener("click", () => {
+              searchInput.value = "";
+              loadPokemonPage(currentPage);
+            });
+
+          loadingElement.classList.add("hidden");
+          pokedexContainer.classList.remove("hidden");
+        }
+      }
+
+      // Abrir modal con detalles del Pokémon
+      async function openPokemonModal(pokemonId) {
+        try {
+          currentPokemonId = pokemonId;
+
+          // Obtener datos del Pokémon
+          const pokemonData = await pokedex.getPokemonData(pokemonId);
+
+          // Obtener datos de especie para información adicional
+          const speciesData = await pokedex.getPokemonSpecies(pokemonId);
+
+          // Actualizar título del modal
+          document.getElementById("modal-title").textContent =
+            `${capitalize(pokemonData.name)} ${formatPokemonId(pokemonData.id)}`;
+
+          // Actualizar imagen
+          const imgElement = document.getElementById("modal-pokemon-img");
+          imgElement.src =
+            pokemonData.sprites.other["official-artwork"].front_default ||
+            pokemonData.sprites.front_default;
+          imgElement.alt = pokemonData.name;
+
+          // Actualizar tipos
+          const typesContainer = document.querySelector("#modal-image + .flex");
+          typesContainer.innerHTML = pokemonData.types
+            .map(
+              (type) => `
+                    <span class="px-4 py-2 ${getTypeColor(type.type.name)} rounded-full font-medium">
+                        ${capitalize(type.type.name)}
+                    </span>
+                `,
+            )
+            .join("");
+
+          // Actualizar información básica
+          document.getElementById("modal-height").textContent =
+            `${(pokemonData.height / 10).toFixed(1)} m`;
+          document.getElementById("modal-weight").textContent =
+            `${(pokemonData.weight / 10).toFixed(1)} kg`;
+          document.getElementById("modal-exp").textContent =
+            pokemonData.base_experience;
+          document.getElementById("modal-id").textContent = formatPokemonId(
+            pokemonData.id,
+          );
+
+          // Actualizar estadísticas
+          const statsContainer = document.getElementById("modal-stats");
+          statsContainer.innerHTML = pokemonData.stats
+            .map(
+              (stat) => `
+                    <div>
+                        <div class="flex justify-between mb-1">
+                            <span class="text-gray-300">${capitalize(stat.stat.name.replace("-", " "))}</span>
+                            <span class="font-bold">${stat.base_stat}</span>
+                        </div>
+                        <div class="w-full bg-gray-700 rounded-full h-2">
+                            <div class="bg-blue-500 h-2 rounded-full" style="width: ${Math.min(stat.base_stat, 100)}%"></div>
+                        </div>
+                    </div>
+                `,
+            )
+            .join("");
+
+          // Actualizar habilidades
+          const abilitiesContainer = document.getElementById("modal-abilities");
+          abilitiesContainer.innerHTML = pokemonData.abilities
+            .map(
+              (ability) => `
+                    <span class="px-4 py-2 bg-gray-800 rounded-lg font-medium">
+                        ${capitalize(ability.ability.name.replace("-", " "))}
+                        ${ability.is_hidden ? '<span class="text-yellow-400 text-xs ml-1">(oculta)</span>' : ""}
+                    </span>
+                `,
+            )
+            .join("");
+
+          // Mostrar modal
+          pokemonModal.classList.remove("hidden");
+        } catch (error) {
+          console.error("Error al abrir modal:", error);
+          alert("No se pudieron cargar los detalles del Pokémon");
+        }
+      }
+
+      // Cerrar modal
+      function closePokemonModal() {
+        pokemonModal.classList.add("hidden");
+      }
+
+      // Navegar al Pokémon anterior/siguiente en el modal
+      async function navigateModal(direction) {
+        if (!currentPokemonId) return;
+
+        const newId =
+          direction === "prev" ? currentPokemonId - 1 : currentPokemonId + 1;
+
+        // Validar que el ID esté en rango
+        if (newId < 1 || newId > totalPokemon) return;
+
+        await openPokemonModal(newId);
+      }
+
+      // Inicializar la aplicación
+      async function initApp() {
+        // Cargar primera página
+        await loadPokemonPage(currentPage);
+
+        // Configurar eventos
+        searchInput.addEventListener("input", (e) => {
+          const query = e.target.value;
+          if (query.length > 2 || query.length === 0) {
+            searchPokemon(query);
+          }
+        });
+
+        prevBtn.addEventListener("click", () => {
+          if (currentPage > 1) {
+            currentPage--;
+            loadPokemonPage(currentPage);
+          }
+        });
+
+        nextBtn.addEventListener("click", () => {
+          if (currentPage * itemsPerPage < totalPokemon) {
+            currentPage++;
+            loadPokemonPage(currentPage);
+          }
+        });
+
+        retryBtn.addEventListener("click", () => {
+          loadPokemonPage(currentPage);
+        });
+
+        closeModalBtn.addEventListener("click", closePokemonModal);
+        modalPrevBtn.addEventListener("click", () => navigateModal("prev"));
+        modalNextBtn.addEventListener("click", () => navigateModal("next"));
+
+        // Cerrar modal con tecla ESC
+        document.addEventListener("keydown", (e) => {
+          if (
+            e.key === "Escape" &&
+            !pokemonModal.classList.contains("hidden")
+          ) {
+            closePokemonModal();
+          }
+        });
+
+        // Cerrar modal al hacer clic fuera
+        pokemonModal.addEventListener("click", (e) => {
+          if (e.target === pokemonModal) {
+            closePokemonModal();
+          }
+        });
+      }
+
+      // Iniciar la aplicación cuando el DOM esté listo
+      document.addEventListener("DOMContentLoaded", initApp);
+    </script>
   </body>
 </html>
