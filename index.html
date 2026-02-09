@@ -252,24 +252,6 @@
         const pokemonData = await fetchPokemon(inputValue);
         displayPokemon(pokemonData);
       });
-
-      function simulateFailures() {
-        console.log("\n=== SIMULANDO FALLOS PARA PROBAR ===");
-
-        // Simular 4 fallos seguidos
-        for (let i = 1; i <= 4; i++) {
-          setTimeout(async () => {
-            try {
-              await fetchPokemon("fake-pokemon-" + i);
-            } catch (e) {
-              console.log(`Simulación ${i}: ${e.message}`);
-              console.log("Estado CB:", circuitBreaker.getStatus());
-            }
-          }, i * 1000);
-        }
-      }
-
-      simulateFailures();
     </script>
   </body>
 </html>
